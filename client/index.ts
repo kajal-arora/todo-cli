@@ -20,6 +20,8 @@ function manageTodoList() {
       {
         axios.post(`${API_URL}/api/item`, {
           data: userContent,
+        }, {
+          headers: {"Content-Type": "application/json"}
         }).then((resp: any) => {
           console.log(resp.data);
         });

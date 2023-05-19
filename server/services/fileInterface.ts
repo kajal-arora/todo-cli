@@ -1,6 +1,6 @@
 export interface ToDoItem {
   id: number;
-  message: string;
+  activity: string;
   status: "done" | "pending";
 }
 
