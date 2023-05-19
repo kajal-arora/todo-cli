@@ -1,4 +1,6 @@
+import axios from "axios";
 // installed types/node package to use process -  npm i --save-dev @types/node
+
 enum USER_ACTIONS {
   ADD = "--a",
   EDIT = "--e",
@@ -7,6 +9,8 @@ enum USER_ACTIONS {
   DONE = "--done",
 }
 
+const API_URL = "http://localhost:8100";
+
 function manageTodoList() {
   let userAction = process.argv[2];
   let userContent = process.argv[3];
@@ -14,11 +18,16 @@ function manageTodoList() {
   switch (userAction) {
     case USER_ACTIONS.ADD:
       {
+        axios.post(`${API_URL}/api/item`, {
+          data: userContent,
+        }).then((resp: any) => {
+          console.log(resp.data);
+        });
         console.log(userAction);
       }
       break;
-      case USER_ACTIONS.EDIT:
-        {
+    case USER_ACTIONS.EDIT:
+      {
         console.log(userAction);
       }
       break;
