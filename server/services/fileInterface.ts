@@ -1,13 +1,15 @@
 export interface ToDoItem {
   id: number;
   activity: string;
-  status: "done" | "pending";
+  status: Status;
 }
 
+type Status = "done" | "pending";
+
 export interface SaveOperations {
-  getAllRecords(): ToDoItem[];
-  saveRecord(rec: ToDoItem): void;
-  updateRecord(rec: ToDoItem, recordId: number): void;
-  deleteRecord(recordId: number): void;
-  getRecordByID(recordId: number): ToDoItem;
+  getAllRecordsFromFile(): Promise<ToDoItem[]>;
+  saveRecord(payload: string): Promise<ToDoItem | null>;
+  updateRecord(payload: string, updateId: number): Promise<ToDoItem | null>;
+  deleteRecord(recordId: number): Promise<number | null>;
+  completeActivity(recordId: number): Promise<ToDoItem| null>;
 }
