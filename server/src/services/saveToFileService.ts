@@ -1,6 +1,7 @@
 import { SaveOperations, ToDoItem } from "./fileInterface";
 import fs, { promises } from "fs";
 import { NotFoundError } from "@karancultor/common";
+import { RedisClientType } from "redis";
 
 export class SaveToFileService implements SaveOperations {
   private file: string;
@@ -54,16 +55,35 @@ export class SaveToFileService implements SaveOperations {
     }
   }
 
-  // async getParsedRecords() {
-  //   let content = await this.getAllRecordsFromFile(this.file);
-  //   if (content) {
-  //     let items = this.getItems(content);
-  //     return items;
-  //   }
-  // }
+  async getData(redisClient: RedisClientType) {
+    try {
+      let records = await redisClient.get("records");
+      if (records) {
+        console.log("getting data from redis", { records });
+        return JSON.parse(records);
+      } else {
+        console.log("getting data from file.");
+        return await this.getAllRecordsFromFile();
+      }
+    } catch (err) {
+      throw new Error("Error while retrieving records from redis.");
+    }
+  }
 
-  async saveRecord(payload: string): Promise<ToDoItem | null> {
-    let fileRecords: ToDoItem[] = await this.getAllRecordsFromFile();
+  async setDataToRedis(redisClient: RedisClientType, data: string) {
+    try {
+      const savedData = await redisClient.set("records", data);
+      console.log({ savedData });
+    } catch (err) {
+      throw new Error("Error while adding data to redis");
+    }
+  }
+
+  async saveRecord(
+    payload: string,
+    redisClient: RedisClientType
+  ): Promise<ToDoItem | null> {
+    let fileRecords: ToDoItem[] = await this.getData(redisClient);
     if (fileRecords) {
       if (payload) {
         let newItem: ToDoItem;
@@ -74,9 +94,11 @@ export class SaveToFileService implements SaveOperations {
           newItem = this.createItem(id, payload);
         }
         fileRecords.push(newItem);
+        const stringifiedData = JSON.stringify(fileRecords);
         try {
-          promises.writeFile(this.file, JSON.stringify(fileRecords));
+          promises.writeFile(this.file, stringifiedData);
           console.log("item saved successfully");
+          this.setDataToRedis(redisClient, stringifiedData);
           return newItem;
         } catch (err) {
           console.log("Error while saving file");
@@ -89,19 +111,22 @@ export class SaveToFileService implements SaveOperations {
 
   async updateRecord(
     payload: string,
-    updateId: number
+    updateId: number,
+    redisClient:RedisClientType
   ): Promise<ToDoItem | null> {
     if (!updateId || !payload) return null; // guard
-    let content: ToDoItem[] = await this.getAllRecordsFromFile();
+    let content: ToDoItem[] = await this.getData(redisClient);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === updateId);
 
       // if (foundIndex === -1) throw new CustomError(`${updateId} not found.`); // guard
       if (foundIndex === -1) throw new NotFoundError(); // guard
       content[foundIndex].activity = payload;
+      const stringifiedData = JSON.stringify(content);
       try {
-        promises.writeFile(this.file, JSON.stringify(content));
+        promises.writeFile(this.file, stringifiedData);
         console.log("Record updated successfully");
+        this.setDataToRedis(redisClient, stringifiedData);
         return content[foundIndex];
       } catch (err) {
         console.error(err, "Cannot update item");
@@ -111,16 +136,18 @@ export class SaveToFileService implements SaveOperations {
     return null;
   }
 
-  async deleteRecord(recordId: number): Promise<number | null> {
+  async deleteRecord(recordId: number, redisClient:RedisClientType): Promise<number | null> {
     if (!recordId) return null;
-    let content: ToDoItem[] = await this.getAllRecordsFromFile();
+    let content: ToDoItem[] = await this.getData(redisClient);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === recordId);
       if (foundIndex === -1) throw new NotFoundError(); // guard
       content.splice(foundIndex, 1);
+      const stringifiedData = JSON.stringify(content);
       try {
-        promises.writeFile(this.file, JSON.stringify(content));
+        promises.writeFile(this.file, stringifiedData);
         console.log("Record deleted successfully");
+        await this.setDataToRedis(redisClient, stringifiedData);
         return recordId;
       } catch (error) {
         console.error(error, "Cannot delete item");
@@ -130,18 +157,20 @@ export class SaveToFileService implements SaveOperations {
     return null;
   }
 
-  async completeActivity(recordId: number): Promise<ToDoItem | null> {
+  async completeActivity(recordId: number, redisClient:RedisClientType): Promise<ToDoItem | null> {
     if (!recordId) return null; // guard
-    let content: ToDoItem[] = await this.getAllRecordsFromFile();
+    let content: ToDoItem[] = await this.getData(redisClient);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === recordId);
 
       // if (foundIndex === -1) throw new CustomError(`${updateId} not found.`); // guard
       if (foundIndex === -1) throw new NotFoundError(); // guard
       content[foundIndex].status = "done";
+      const stringifiedData = JSON.stringify(content);
       try {
-        promises.writeFile(this.file, JSON.stringify(content));
+        promises.writeFile(this.file, stringifiedData);
         console.log("File updated successfully as", content[foundIndex]);
+        await this.setDataToRedis(redisClient, stringifiedData);
         return content[foundIndex];
       } catch (error) {
         console.error(error, "Cannot update item");
