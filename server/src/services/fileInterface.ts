@@ -1,5 +1,3 @@
-import { RedisClientType } from "redis";
-
 export interface ToDoItem {
   id: number;
   activity: string;
@@ -9,9 +7,9 @@ export interface ToDoItem {
 type Status = "done" | "pending";
 
 export interface SaveOperations {
-  getData(redisClient: RedisClientType): Promise<ToDoItem[]>;
-  saveRecord(payload: string,redisClient: RedisClientType): Promise<ToDoItem | null>;
-  updateRecord(payload: string, updateId: number, redisClient:RedisClientType): Promise<ToDoItem | null>;
-  deleteRecord(recordId: number, redisClient:RedisClientType): Promise<number | null>;
-  completeActivity(recordId: number, redisClient:RedisClientType): Promise<ToDoItem| null>;
+  getData(): Promise<ToDoItem[]>;
+  saveRecord(payload: string): Promise<ToDoItem | null>;
+  updateRecord(payload: string, updateId: number): Promise<ToDoItem | null>;
+  deleteRecord(recordId: number): Promise<number | null>;
+  completeActivity(recordId: number): Promise<ToDoItem| null>;
 }

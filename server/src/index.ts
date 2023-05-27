@@ -2,7 +2,7 @@ import "express-async-errors";
 import { errorHandler } from "@karancultor/common";
 import express, { Request, Response } from "express";
 import { SaveToFileService } from "./services/saveToFileService";
-import { RedisClientType, createClient } from "redis";
+import { redisClient } from './services/redisClient';
 
 let app = express();
 // added below middlewares to parse incoming requests.. to read body for post requests
@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = 8100;
 
-let redisClient: RedisClientType;
+// let redisClient: RedisClientType = RedisClient;
 
 // (async() => {
 //   redisClient= redis.createClient();
@@ -21,34 +21,39 @@ let redisClient: RedisClientType;
 //   await redisClient.connect();
 // })();
 
-async function createRedisClient() {
-  try {
-    redisClient = createClient();
-    await redisClient.connect();
-    console.log("Connected with redis");
-    // await redisClient.quit();
-  } catch (e) {
-    throw new Error("Error connecting with redis");
-  }
-}
+// async function createRedisClient() {
+//   try {
+//     redisClient = createClient();
+//     await redisClient.connect();
+//     console.log("Connected with redis");
+//     // await redisClient.quit();
+//   } catch (e) {
+//     throw new Error("Error connecting with redis");
+//   }
+// }
 
-createRedisClient();
+// createRedisClient();
 
+const REDIS_URI = process.env.REDIS_URI;
+if (!REDIS_URI) throw new Error("REDIS URI NOT FOUND IN ENV");
 const FILE_NAME = "todo.json";
-const sfs = new SaveToFileService(FILE_NAME);
+
+
+const rds = redisClient(REDIS_URI);
+const sfs = new SaveToFileService(FILE_NAME, rds);
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json("ok");
 });
 
 app.get("/api/items", async (req: Request, res: Response) => {
-  const items = await sfs.getData(redisClient);
+  const items = await sfs.getData();
   res.send(items);
   res.status(200);
 });
 
 app.post("/api/item", async (req: Request, res: Response) => {
-  const result = await sfs.saveRecord(req.body.data, redisClient);
+  const result = await sfs.saveRecord(req.body.data);
   if (result) {
     res.status(200).json("Item added successfully.");
   } else {
@@ -57,7 +62,7 @@ app.post("/api/item", async (req: Request, res: Response) => {
 });
 
 app.put("/api/item/:id", async (req: Request, res: Response) => {
-  const result = await sfs.updateRecord(req.body.data, Number(req.params.id), redisClient);
+  const result = await sfs.updateRecord(req.body.data, Number(req.params.id));
   if (result) res.status(200).json("updated");
   else {
     res.status(500).json("error occured in updating");
@@ -65,7 +70,7 @@ app.put("/api/item/:id", async (req: Request, res: Response) => {
 });
 
 app.put("/api/item/complete/:id", async (req: Request, res: Response) => {
-  const result = await sfs.completeActivity(Number(req.params.id), redisClient);
+  const result = await sfs.completeActivity(Number(req.params.id));
   if (result) {
     res.status(200).json("marked as complete");
   } else {
@@ -74,7 +79,7 @@ app.put("/api/item/complete/:id", async (req: Request, res: Response) => {
 });
 
 app.delete("/api/item/:id", async (req: Request, res: Response) => {
-  const result = await sfs.deleteRecord(Number(req.params.id), redisClient);
+  const result = await sfs.deleteRecord(Number(req.params.id));
   if (result) {
     res.status(200).json("deleted");
   } else {
