@@ -1,45 +1,25 @@
 import "express-async-errors";
-import { errorHandler } from "@karancultor/common";
 import express, { Request, Response } from "express";
+import * as dotenv from "dotenv";
+import { errorHandler } from "@karancultor/common";
+
 import { SaveToFileService } from "./services/saveToFileService";
-import { redisClient } from './services/redisClient';
+import { redisClient } from './db/redisClient';
 
 let app = express();
+dotenv.config();
+
 // added below middlewares to parse incoming requests.. to read body for post requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const PORT = 8100;
 
-// let redisClient: RedisClientType = RedisClient;
-
-// (async() => {
-//   redisClient= redis.createClient();
-//   console.log("Create client");
-//   redisClient.on("error", err =>  console.log('Redis server error', err));
-
-//   await redisClient.connect();
-// })();
-
-// async function createRedisClient() {
-//   try {
-//     redisClient = createClient();
-//     await redisClient.connect();
-//     console.log("Connected with redis");
-//     // await redisClient.quit();
-//   } catch (e) {
-//     throw new Error("Error connecting with redis");
-//   }
-// }
-
-// createRedisClient();
-
 const REDIS_URI = process.env.REDIS_URI;
 if (!REDIS_URI) throw new Error("REDIS URI NOT FOUND IN ENV");
-const FILE_NAME = "todo.json";
-
 
 const rds = redisClient(REDIS_URI);
+const FILE_NAME = "todo.json";
 const sfs = new SaveToFileService(FILE_NAME, rds);
 
 app.get("/", (req: Request, res: Response) => {

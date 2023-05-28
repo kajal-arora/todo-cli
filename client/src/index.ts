@@ -17,41 +17,40 @@ async function manageTodoList() {
 
   switch (userAction) {
     case USER_ACTIONS.ADD:
-        axios
-          .post(
-            `${API_URL}/api/item`,
-            {
-              data: userContent,
-            },
-            {
-              headers: { "Content-Type": "application/json" },
-            }
-          )
-          .then((resp: any) => {
-            console.log("Item added successfully");
-          });
+      axios
+        .post(
+          `${API_URL}/api/item`,
+          {
+            data: userContent,
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+        .then((resp: any) => {
+          console.log("Item added successfully");
+        })
+        .catch((e) => console.log("Error while addoing item", e.message));
       break;
 
     case USER_ACTIONS.EDIT:
-        let idToBeUpdated = process.argv[4];
-        axios
-          .put(
-            `${API_URL}/api/item/${idToBeUpdated}`,
-            {
-              data: userContent,
-            },
-            {
-              headers: { "Content-Type": "application/json" },
-            }
-          )
-          .then((res) => {
-            console.log("Item updated successfully");
-          })
-          .catch((err) => console.log("Item not found", err));
+      let idToBeUpdated = process.argv[4];
+      axios
+        .put(
+          `${API_URL}/api/item/${idToBeUpdated}`,
+          {
+            data: userContent,
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+        .then((res) => {
+          console.log("Item updated successfully");
+        })
+        .catch((err) => console.log("Item not found", err.message));
 
-        console.log(userAction);
-        break;
-
+      break;
 
     case USER_ACTIONS.GET_ALL: {
       axios.get(`${API_URL}/api/items`).then((res) => {
@@ -67,8 +66,8 @@ async function manageTodoList() {
         .then((res) => {
           console.log(res.data);
         })
-        .catch((e) => console.log(e));
-        break;
+        .catch((e) => console.log(e.message));
+      break;
     }
 
     case USER_ACTIONS.MARK_COMPLETE: {
@@ -78,8 +77,8 @@ async function manageTodoList() {
         .then((res) => {
           console.log(res.data);
         })
-        .catch((e) => console.log(e));
-        break;
+        .catch((e) => console.log(e.message));
+      break;
     }
   }
 }
