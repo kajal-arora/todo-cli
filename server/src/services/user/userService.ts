@@ -5,15 +5,16 @@ import { Password } from "./password";
 export class UserService {
   private rdsClient: RedisClientType;
   constructor(redisClient: RedisClientType) {
-    if (!redisClient) throw Error ('REDIS CLIENT NOT FOUND');
+    if (!redisClient) throw Error("REDIS CLIENT NOT FOUND");
     this.rdsClient = redisClient;
   }
 
-  private createNewUser(emailId: string, pwd: string) {
-    const encryptedPwd = Password.toHash(pwd);
+ private async createNewUser(emailId: string, pwd: string) {
+    const encryptedPwd = await Password.toHash(pwd);
+    console.log({ encryptedPwd, uuid: await Password.getUUID() });
     this.rdsClient.set(
       emailId,
-      JSON.stringify({ pwd: encryptedPwd, uuid: Password.getUUID() })
+      JSON.stringify({ pwd: encryptedPwd, uuid: await Password.getUUID() })
     );
   }
 
@@ -21,6 +22,7 @@ export class UserService {
     try {
       const emailIdFound = await this.rdsClient.get(emailId);
       if (emailIdFound) {
+        console.log("Email is already registered.");
         throw new Error("Email is already registered.");
       } else {
         this.createNewUser(emailId, pwd);

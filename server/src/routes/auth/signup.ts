@@ -1,12 +1,27 @@
 import express, { Request, Response } from "express";
 import { body } from "express-validator";
+import { RedisClientType, createClient } from "redis";
 import { UserService } from "../../services/user/userService";
 
-import { rds } from '../../db/redisClient';
+// import { rds } from '../../db/redisClient';
 
 const router = express.Router();
+let redisInstance: RedisClientType;
+let userService:any;
+(async () => {
+  redisInstance = createClient({
+    url: process.env.REDIS_URI,
+  }); // Await the resolved Redis instance promise
 
-const userService = new UserService(rds.client);
+  await redisInstance.connect();
+  redisInstance.on("connect", function () {
+    console.log("Connected!");
+  });
+  userService = new UserService(redisInstance);
+})();
+
+// Use the resolved Redis instance for further operations
+// await redisInstance.connect()
 
 router.post(
   "/api/users/signup",
@@ -28,7 +43,7 @@ router.post(
     if (token) {
       res.status(201).send({ token });
     } else {
-      res.status(500).send({ error: 'Internal Server Error .....'});
+      res.status(500).send({ error: "Internal Server Error ....." });
     }
     // console.log(userJwt);
     // Store it on a cookie session object
@@ -39,7 +54,6 @@ router.post(
     // };
     // Once the user signs up, he/she will get the cookie
     // that would contain the JWT which will be base64 encoded
-    
   }
 );
 

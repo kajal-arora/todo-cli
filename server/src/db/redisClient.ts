@@ -1,26 +1,42 @@
+// import { RedisClientType, createClient } from "redis";
+
+// class Redis {
+//   client: RedisClientType;
+
+//   async create(url: string) {
+//     this.client = createClient({ url });
+//   }
+
+//   async connect() {
+//         await this.client.connect();
+//         console.log("Rds connection established");
+//   }
+// }
+
+// export const rds = new Redis();
+
 import { RedisClientType, createClient } from "redis";
 
 class Redis {
   client: RedisClientType;
-//   constructor(url: string) {
-//     try {
-//       this.redisClient = createClient({
-//         url,
-//       });
-//       this.connectWithRedis();
-//     } catch (err) {
-//       console.log("Error while creating redis client");
-//     }
-//   }
 
-  async create(url: string) {
-    this.client = createClient({ url });
+  constructor() {
+    this.client = createClient(); // Initialize the client in the constructor
   }
 
   async connect() {
-        await this.client.connect();
-        console.log("Rds connection established");
+    await this.client.connect();
+    console.log("Redis connection established");
   }
 }
-// export const redisClient = (url: string) => new RedisClient(url).redisClient;
-export const rds = new Redis();
+
+const rdsPromise = new Promise<Redis>((resolve, reject) => {
+  const rds = new Redis();
+  rds.connect()
+    .then(() => {
+      resolve(rds); // Resolve the promise with the initialized Redis instance
+    })
+    .catch(reject);
+});
+
+export const rds = rdsPromise;

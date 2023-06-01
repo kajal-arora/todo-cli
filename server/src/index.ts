@@ -2,10 +2,10 @@ import "express-async-errors";
 import * as dotenv from "dotenv";
 import { rds } from "./db/redisClient";
 import { app } from './app';
-// import express, { Request, Response } from "express";
-// import { errorHandler } from "@karancultor/common";
-// import { SaveToFileService } from "./services/saveToFileService";
-// import { signupRouter } from "./routes/signup";
+import express, { Request, Response } from "express";
+import { errorHandler } from "@karancultor/common";
+import { SaveToFileService } from "./services/saveToFileService";
+import { signupRouter } from "./routes/auth/signup";
 
 
 dotenv.config();
@@ -19,8 +19,12 @@ const start = async () => {
   if (!REDIS_URI) throw new Error("REDIS URI NOT FOUND IN ENV");
   if (!JWT_KEY) throw new Error("JWT key not found in env.");
  
-  await rds.create(REDIS_URI!);
-  await rds.connect();
+  // await rds.create(REDIS_URI!);
+  // await rds.connect();
+  // const redisInstance = await rds; // Await the resolved Redis instance promise
+
+  // // Use the resolved Redis instance for further operations
+  // await redisInstance.connect();
   
   app.listen(PORT, "localhost", () => {
     console.log(`Listening at Port ${PORT}`);
@@ -82,6 +86,6 @@ start();
 // });
 
 // app.use(errorHandler);
-// app.use(signupRouter);
+app.use(signupRouter);
 
 
