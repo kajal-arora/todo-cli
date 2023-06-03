@@ -102,6 +102,7 @@ export class SaveToFileService implements SaveOperations {
         fileRecords.push(newItem);
         const stringifiedData = JSON.stringify(fileRecords);
         try {
+          //used write file to make push new item to make it json file, hence not used append
           promises.writeFile(this.file, stringifiedData);
           console.log("item saved successfully");
           this.setDataToRedis(stringifiedData);
