@@ -1,5 +1,8 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { RedisClientType, createClient } from "redis";
+import { REDIS_URI } from "../../common/constants";
+import { validateRequest } from "../../common/validateRequest";
+import { getRdsClient } from "../../db/rdsClient";
 import { SaveOperations } from "../../services/fileInterface";
 
 import { SaveToFileService } from "../../services/saveToFileService";
@@ -7,28 +10,41 @@ import { SaveToFileService } from "../../services/saveToFileService";
 const router = express.Router();
 
 const FILE_NAME = "todo.json";
-let sfs:SaveOperations; 
-let redisInstance: RedisClientType;
+let sfs: SaveOperations = new SaveToFileService(FILE_NAME);
+// let redisInstance: RedisClientType;
 
-(async () => {
-  redisInstance = createClient({
-    url: process.env.REDIS_URI,
-  }); // Await the resolved Redis instance promise
+// async function initialiseRedis() {
+//     const rds = await getRdsClient();
+//     sfs = new SaveToFileService(FILE_NAME, rds);
+// }
 
-  await redisInstance.connect();
-  sfs = new SaveToFileService(FILE_NAME, redisInstance);
-})();
+// initialiseRedis();
 
+// (async () => {
+//   redisInstance = createClient({
+//     url: REDIS_URI,
+//   }); // Await the resolved Redis instance promise
+
+//   await redisInstance.connect();
+//   sfs = new SaveToFileService(FILE_NAME, redisInstance);
+// })();
 
 router.get("/", (req: Request, res: Response) => {
   res.status(200).json("ok");
 });
 
-router.get("/api/items", async (req: Request, res: Response) => {
-  const items = await sfs.getData();
-  res.send(items);
-  res.status(200);
-});
+router.get(
+  "/api/items",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    console.log({
+        h:req.headers,
+        user: req.currentUser
+    })
+    const items = await sfs.getData();
+    res.status(200).json(items);
+  }
+);
 
 router.post("/api/item", async (req: Request, res: Response) => {
   const result = await sfs.saveRecord(req.body.data);
@@ -65,4 +81,4 @@ router.delete("/api/item/:id", async (req: Request, res: Response) => {
   }
 });
 
-export { router as fileOperationsRouter}
+export { router as fileOperationsRouter };

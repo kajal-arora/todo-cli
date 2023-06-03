@@ -1,12 +1,6 @@
 import "express-async-errors";
-import * as dotenv from "dotenv";
-import { app } from './app';
-
-dotenv.config();
-
-const PORT = 8100;
-const JWT_KEY = process.env.JWT_KEY;
-const REDIS_URI = process.env.REDIS_URI;
+import { app } from "./app";
+import { REDIS_URI, JWT_KEY, PORT } from "./common/constants";
 
 
 const start = async () => {
@@ -15,11 +9,8 @@ const start = async () => {
   app.listen(PORT, "localhost", () => {
     console.log(`Listening at Port ${PORT}`);
   });
-}
+};
 
 start();
 
 // app.use(errorHandler);
-
-
-

@@ -1,30 +1,29 @@
 import express, { Request, Response } from "express";
 import { body } from "express-validator";
-import { RedisClientType, createClient } from "redis";
 import { UserService } from "../../services/user/userService";
 
 // import { rds } from '../../db/redisClient';
 
 const router = express.Router();
-let redisInstance: RedisClientType;
-let userService:any;
-(async () => {
-  redisInstance = createClient({
-    url: process.env.REDIS_URI,
-  }); // Await the resolved Redis instance promise
+// let redisInstance: RedisClientType;
+let userService = new UserService();
+// (async () => {
+//   redisInstance = createClient({
+//     url: REDIS_URI,
+//   }); // Await the resolved Redis instance promise
 
-  await redisInstance.connect();
-  redisInstance.on("connect", function () {
-    console.log("Connected!");
-  });
-  userService = new UserService(redisInstance);
-})();
+//   await redisInstance.connect();
+//   redisInstance.on("connect", function () {
+//     console.log("Connected!");
+//   });
+//   userService = new UserService();
+// })();
 
 // Use the resolved Redis instance for further operations
 // await redisInstance.connect()
 
 router.post(
-  "/api/users/signup",
+  "/api/user/signup",
   [
     // if any errors are found by express-validator
     // the errors are attached to the request object
@@ -41,7 +40,7 @@ router.post(
     //check if user exists
     const token = await userService.signUpUser(email, password);
     if (token) {
-      res.status(201).send({ token });
+      res.status(200).send({ token });
     } else {
       res.status(500).send({ error: "Internal Server Error ....." });
     }

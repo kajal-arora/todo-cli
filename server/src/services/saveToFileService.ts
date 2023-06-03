@@ -2,15 +2,15 @@ import { SaveOperations, ToDoItem } from "./fileInterface";
 import fs, { promises } from "fs";
 import { NotFoundError } from "@karancultor/common";
 import { RedisClientType } from "redis";
+import { getRdsClient } from "../db/rdsClient";
 
 export class SaveToFileService implements SaveOperations {
   private file: string;
-  private rdsClient: RedisClientType;
-  constructor(fileName: string, rdsClient: RedisClientType) {
+  // private rdsClient: RedisClientType;
+  constructor(fileName: string, rdsClient?: RedisClientType) {
     this.file = fileName;
-    this.rdsClient = rdsClient;
+    // this.rdsClient = rdsClient;
     this.checkIfFileExists();
-
   }
 
   private getNextId(items: ToDoItem[]): number {
@@ -60,7 +60,10 @@ export class SaveToFileService implements SaveOperations {
 
   async getData() {
     try {
-      let records = await this.rdsClient.get("records");
+      const rds = await getRdsClient();
+      const records = await rds?.get("records");
+      rds?.quit();
+      // let records = await this.rdsClient.get("records");
       if (records) {
         console.log("getting data from redis", { records });
         return JSON.parse(records);
@@ -75,16 +78,17 @@ export class SaveToFileService implements SaveOperations {
 
   async setDataToRedis(data: string) {
     try {
-      const savedData = await this.rdsClient.set("records", data);
+      const rds = await getRdsClient();
+      // const savedData = await this.rdsClient.set("records", data);
+      const savedData = await rds?.set("records", data);
+      await rds?.quit();
       console.log({ savedData });
     } catch (err) {
       throw new Error("Error while adding data to redis");
     }
   }
 
-  async saveRecord(
-    payload: string
-  ): Promise<ToDoItem | null> {
+  async saveRecord(payload: string): Promise<ToDoItem | null> {
     let fileRecords: ToDoItem[] = await this.getData();
     if (fileRecords) {
       if (payload) {
