@@ -12,21 +12,19 @@ export class UserService {
   //     this.rdsClient = redisClient;
   //   }
 
-  private async createNewUser(emailId: string, pwd: string) {
+  private async createNewUser(emailId: string, pwd: string): Promise<string> {
     const encryptedPwd = await Password.toHash(pwd);
     console.log({ emailId });
     const rds = await getRdsClient();
-
-    rds?.set(
-      emailId,
-      JSON.stringify({ pwd: encryptedPwd, uuid: await Password.getUUID() })
-    );
+    const uuid = await Password.getUUID();
+    rds?.set(emailId, JSON.stringify({ pwd: encryptedPwd, uuid }));
     rds?.quit();
+    return uuid;
   }
 
   private async checkIfEmailExists(emailId: string) {
     const rds = await getRdsClient();
-    const userKey = getUserDetailsKey(emailId);
+    const userKey = getUserDetailsKey(emailId); //get details linked with email id
     const emailIdDetails = await rds?.get(userKey);
     rds?.quit();
     return { emailIdDetails, userKey };
@@ -40,11 +38,9 @@ export class UserService {
       if (emailIdDetails) {
         throw new Error("Email is already registered.");
       } else {
-        this.createNewUser(userKey, pwd);
+        const uuid = await this.createNewUser(userKey, pwd);
         const userJWT = jwt.sign(
-          {
-            currentUser: { emailId },
-          },
+          { emailId, uuid },
           JWT_KEY!
         );
         return userJWT;
@@ -63,14 +59,18 @@ export class UserService {
         throw new Error("Email Id is not registered.");
       }
       //verify the password
-      const savedPwd = JSON.parse(emailIdDetails).pwd;
-      const isPwdMatched = await Password.comparePassword(savedPwd, pwd);
+      const parsedUserDetails = JSON.parse(emailIdDetails);
+      const isPwdMatched = await Password.comparePassword(
+        parsedUserDetails.pwd,
+        pwd
+      );
       if (!isPwdMatched) {
         throw new Error("Password is incorrect");
       }
       const userJWT = jwt.sign(
         {
-          currentUser: { emailId },
+          emailId,
+          uuid: parsedUserDetails.uuid,
         },
         JWT_KEY!
       );

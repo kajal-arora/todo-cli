@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAuthToken } from "../common/readFiLe";
 import { API_URL } from "../constants";
 
 enum USER_ACTIONS {
@@ -22,7 +23,10 @@ async function manageTodoList() {
             data: userContent,
           },
           {
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await getAuthToken()}`,
+            },
           }
         )
         .then((resp: any) => {
@@ -40,7 +44,10 @@ async function manageTodoList() {
             data: userContent,
           },
           {
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await getAuthToken()}`,
+            },
           }
         )
         .then((res) => {
@@ -54,7 +61,7 @@ async function manageTodoList() {
       axios
         .get(`${API_URL}/api/items`, {
           headers: {
-            Authorization: "Bearer test",
+            Authorization: `Bearer ${await getAuthToken()}`,
           },
         })
         .then((res) => {
@@ -67,7 +74,9 @@ async function manageTodoList() {
     case USER_ACTIONS.DELETE: {
       let idToBeUpdated = process.argv[3];
       axios
-        .delete(`${API_URL}/api/item/${idToBeUpdated}`)
+        .delete(`${API_URL}/api/item/${idToBeUpdated}`, {
+          headers: { Authorization: `Bearer ${await getAuthToken()}` },
+        })
         .then((res) => {
           console.log(res.data);
         })
@@ -78,7 +87,11 @@ async function manageTodoList() {
     case USER_ACTIONS.MARK_COMPLETE: {
       let idToBeUpdated = process.argv[3];
       axios
-        .put(`${API_URL}/api/item/complete/${idToBeUpdated}`)
+        .put(`${API_URL}/api/item/complete/${idToBeUpdated}`, {
+          headers: {
+            Authorization: `Bearer ${await getAuthToken()}`,
+          },
+        })
         .then((res) => {
           console.log(res.data);
         })

@@ -4,7 +4,7 @@ import { JWT_KEY } from "./constants";
 
 type UserPayload = {
   emailId: string;
-  // uuid: string;
+  uuid: string;
 };
 
 // this is how we get into an existing inbuilt
@@ -30,7 +30,6 @@ export const validateRequest = (
     }
     const token = authToken.split(" ")[1];
     const payload = jwt.verify(token, JWT_KEY!) as UserPayload;
-    console.log({ payload });
     req.currentUser = payload;
     next();
   } catch (err) {

@@ -37,48 +37,60 @@ router.get(
   "/api/items",
   validateRequest,
   async (req: Request, res: Response) => {
-    console.log({
-        h:req.headers,
-        user: req.currentUser
-    })
-    const items = await sfs.getData();
+    const items = await sfs.getData(req.currentUser?.uuid!);
     res.status(200).json(items);
   }
 );
 
-router.post("/api/item", async (req: Request, res: Response) => {
-  const result = await sfs.saveRecord(req.body.data);
-  if (result) {
-    res.status(200).json("Item added successfully.");
-  } else {
-    res.status(500).json("error occured in adding");
+router.post(
+  "/api/item",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const result = await sfs.saveRecord(req.body.data, req.currentUser?.uuid!);
+    if (result) {
+      res.status(200).json("Item added successfully.");
+    } else {
+      res.status(500).json("error occured in adding");
+    }
   }
-});
+);
 
-router.put("/api/item/:id", async (req: Request, res: Response) => {
-  const result = await sfs.updateRecord(req.body.data, Number(req.params.id));
-  if (result) res.status(200).json("updated");
-  else {
-    res.status(500).json("error occured in updating");
+router.put(
+  "/api/item/:id",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const result = await sfs.updateRecord(req.body.data, Number(req.params.id), req.currentUser?.uuid!);
+    if (result) res.status(200).json("updated");
+    else {
+      res.status(500).json("error occured in updating");
+    }
   }
-});
+);
 
-router.put("/api/item/complete/:id", async (req: Request, res: Response) => {
-  const result = await sfs.completeActivity(Number(req.params.id));
-  if (result) {
-    res.status(200).json("marked as complete");
-  } else {
-    res.status(500).json("error occured while marking it as complete.");
+router.put(
+  "/api/item/complete/:id",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const result = await sfs.completeActivity(Number(req.params.id), req.currentUser?.uuid!);
+    if (result) {
+      res.status(200).json("marked as complete");
+    } else {
+      res.status(500).json("error occured while marking it as complete.");
+    }
   }
-});
+);
 
-router.delete("/api/item/:id", async (req: Request, res: Response) => {
-  const result = await sfs.deleteRecord(Number(req.params.id));
-  if (result) {
-    res.status(200).json("deleted");
-  } else {
-    res.status(500).json("error occured while deleing.");
+router.delete(
+  "/api/item/:id",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const result = await sfs.deleteRecord(Number(req.params.id), req.currentUser?.uuid!);
+    if (result) {
+      res.status(200).json("deleted");
+    } else {
+      res.status(500).json("error occured while deleing.");
+    }
   }
-});
+);
 
 export { router as fileOperationsRouter };

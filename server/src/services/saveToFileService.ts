@@ -13,14 +13,14 @@ export class SaveToFileService implements SaveOperations {
     this.checkIfFileExists();
   }
 
-  private getNextId(items: ToDoItem[]): number {
-    let lastItem = items[items.length - 1];
-    try {
-      return lastItem.id + 1;
-    } catch (err: unknown) {
-      throw new Error((err as { message: string }).message);
-    }
-  }
+  // private getNextId(items: ToDoItem[]): number {
+  //   let lastItem = items[items.length - 1];
+  //   try {
+  //     return lastItem.id + 1;
+  //   } catch (err: unknown) {
+  //     throw new Error((err as { message: string }).message);
+  //   }
+  // }
 
   private createItem(id: number, payload: string): ToDoItem {
     const record: ToDoItem = {
@@ -58,29 +58,31 @@ export class SaveToFileService implements SaveOperations {
     }
   }
 
-  async getData() {
+  async getData(uuid: string) {
     try {
       const rds = await getRdsClient();
-      const records = await rds?.get("records");
+      const records = await rds?.get(`${uuid}#records`);
       rds?.quit();
       // let records = await this.rdsClient.get("records");
       if (records) {
         console.log("getting data from redis", { records });
         return JSON.parse(records);
-      } else {
-        console.log("getting data from file.");
-        return await this.getAllRecordsFromFile();
       }
+      return [];
+      // } else {
+      //   console.log("getting data from file.");
+      //   return await this.getAllRecordsFromFile();
+      // }
     } catch (err) {
       throw new Error("Error while retrieving records from redis.");
     }
   }
 
-  async setDataToRedis(data: string) {
+  async setDataToRedis(data: string, uuid: string) {
     try {
       const rds = await getRdsClient();
       // const savedData = await this.rdsClient.set("records", data);
-      const savedData = await rds?.set("records", data);
+      const savedData = await rds?.set(`${uuid}#records`, data);
       await rds?.quit();
       console.log({ savedData });
     } catch (err) {
@@ -88,24 +90,24 @@ export class SaveToFileService implements SaveOperations {
     }
   }
 
-  async saveRecord(payload: string): Promise<ToDoItem | null> {
-    let fileRecords: ToDoItem[] = await this.getData();
+  async saveRecord(payload: string, uuid: string): Promise<ToDoItem | null> {
+    let fileRecords: ToDoItem[] = await this.getData(uuid);
     if (fileRecords) {
       if (payload) {
         let newItem: ToDoItem;
-        if (fileRecords.length === 0) {
-          newItem = this.createItem(1, payload);
-        } else {
-          let id = this.getNextId(fileRecords);
-          newItem = this.createItem(id, payload);
-        }
+        // if (fileRecords.length === 0) {
+        newItem = this.createItem(fileRecords.length + 1, payload);
+        // } else {
+        // let id = this.getNextId(fileRecords);
+        // newItem = this.createItem(id, payload);
+
         fileRecords.push(newItem);
         const stringifiedData = JSON.stringify(fileRecords);
         try {
           //used write file to make push new item to make it json file, hence not used append
           promises.writeFile(this.file, stringifiedData);
           console.log("item saved successfully");
-          this.setDataToRedis(stringifiedData);
+          this.setDataToRedis(stringifiedData, uuid);
           return newItem;
         } catch (err) {
           console.log("Error while saving file");
@@ -118,10 +120,11 @@ export class SaveToFileService implements SaveOperations {
 
   async updateRecord(
     payload: string,
-    updateId: number
+    updateId: number,
+    uuid: string
   ): Promise<ToDoItem | null> {
     if (!updateId || !payload) return null; // guard
-    let content: ToDoItem[] = await this.getData();
+    let content: ToDoItem[] = await this.getData(uuid);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === updateId);
 
@@ -132,7 +135,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("Record updated successfully");
-        this.setDataToRedis(stringifiedData);
+        this.setDataToRedis(stringifiedData, uuid);
         return content[foundIndex];
       } catch (err) {
         console.error(err, "Cannot update item");
@@ -142,9 +145,9 @@ export class SaveToFileService implements SaveOperations {
     return null;
   }
 
-  async deleteRecord(recordId: number): Promise<number | null> {
+  async deleteRecord(recordId: number, uuid: string): Promise<number | null> {
     if (!recordId) return null;
-    let content: ToDoItem[] = await this.getData();
+    let content: ToDoItem[] = await this.getData(uuid);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === recordId);
       if (foundIndex === -1) throw new NotFoundError(); // guard
@@ -153,7 +156,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("Record deleted successfully");
-        await this.setDataToRedis(stringifiedData);
+        await this.setDataToRedis(stringifiedData, uuid);
         return recordId;
       } catch (error) {
         console.error(error, "Cannot delete item");
@@ -163,9 +166,12 @@ export class SaveToFileService implements SaveOperations {
     return null;
   }
 
-  async completeActivity(recordId: number): Promise<ToDoItem | null> {
+  async completeActivity(
+    recordId: number,
+    uuid: string
+  ): Promise<ToDoItem | null> {
     if (!recordId) return null; // guard
-    let content: ToDoItem[] = await this.getData();
+    let content: ToDoItem[] = await this.getData(uuid);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === recordId);
 
@@ -176,7 +182,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("File updated successfully as", content[foundIndex]);
-        await this.setDataToRedis(stringifiedData);
+        await this.setDataToRedis(stringifiedData, uuid);
         return content[foundIndex];
       } catch (error) {
         console.error(error, "Cannot update item");

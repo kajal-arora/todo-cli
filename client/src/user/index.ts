@@ -1,8 +1,11 @@
 import axios from "axios";
+import { API_URL, FILE_NAME } from "../constants";
+import fs from "fs/promises";
 
 enum USER_LOGIN_CMDS {
   sign_up = "signup",
-  sign_in = "login",
+  sign_in = "signin",
+  logout = "logout",
 }
 
 function getProcessArgValue(
@@ -27,11 +30,10 @@ function getProcessArgValue(
   return null;
 }
 
-enum ERRORS {
-    /* error codes for process exit */
-}
+enum ERRORS {}
+/* error codes for process exit */
 
-function getEmailAndPassword(): { email: string, password: string } {
+function getEmailAndPassword(): { email: string; password: string } {
   let email: string, password: string;
 
   //get args after user action
@@ -50,14 +52,46 @@ function getEmailAndPassword(): { email: string, password: string } {
   return { email, password };
 }
 
-function handleSignUpUser() {
+async function handleSignUpUser() {
   const { email, password } = getEmailAndPassword();
-
-  //   const { email, password } = getEmailAndPassword();
-  console.log({ email, password });
+  try {
+    if (email && password) {
+      await axios.post(
+        `${API_URL}/api/user/signup`,
+        {
+          email,
+          password,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      await handleSignInUser();
+    }
+  } catch (err: any) {
+    console.error("Error while signing up the user", err.message);
+  }
 }
 
-function handleSignInUser() {}
+async function handleSignInUser() {
+  const { email, password } = getEmailAndPassword();
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/user/signin`,
+      { email, password },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    if (response.data?.token) {
+      //save token in credentials file
+      await fs.writeFile(FILE_NAME, response.data?.token);
+      console.log("Successfully logged in.");
+    }
+  } catch (err: any) {
+    console.log("Error while sign in the user", err.message);
+  }
+}
+
+async function handleLogout() {
+  await fs.writeFile(FILE_NAME, "");
+}
 
 async function manageUserAuthActions() {
   let userAction = process.argv[2];
@@ -68,6 +102,9 @@ async function manageUserAuthActions() {
       break;
     case USER_LOGIN_CMDS.sign_in:
       handleSignInUser();
+      break;
+    case USER_LOGIN_CMDS.logout:
+      handleLogout();
       break;
   }
 }
