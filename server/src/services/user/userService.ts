@@ -36,13 +36,10 @@ export class UserService {
         emailId
       );
       if (emailIdDetails) {
-        throw new Error("Email is already registered.");
+        throw new Error(`${userKey} Email is already registered.`);
       } else {
         const uuid = await this.createNewUser(userKey, pwd);
-        const userJWT = jwt.sign(
-          { emailId, uuid },
-          JWT_KEY!
-        );
+        const userJWT = jwt.sign({ emailId, uuid }, JWT_KEY!);
         return userJWT;
         // ! to ignore typescript error because we are already taking care of the case
         // where JWT_KEY is not defined in the env vars in our start() in index.ts
@@ -54,9 +51,9 @@ export class UserService {
 
   async signInUser(emailId: string, pwd: string) {
     try {
-      const { emailIdDetails } = await this.checkIfEmailExists(emailId);
+      const { emailIdDetails, userKey } = await this.checkIfEmailExists(emailId);
       if (!emailIdDetails) {
-        throw new Error("Email Id is not registered.");
+        throw new Error(`${userKey} Email Id is not registered.`);
       }
       //verify the password
       const parsedUserDetails = JSON.parse(emailIdDetails);

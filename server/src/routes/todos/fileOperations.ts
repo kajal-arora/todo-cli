@@ -56,18 +56,6 @@ router.post(
 );
 
 router.put(
-  "/api/item/:id",
-  validateRequest,
-  async (req: Request, res: Response) => {
-    const result = await sfs.updateRecord(req.body.data, Number(req.params.id), req.currentUser?.uuid!);
-    if (result) res.status(200).json("updated");
-    else {
-      res.status(500).json("error occured in updating");
-    }
-  }
-);
-
-router.put(
   "/api/item/complete/:id",
   validateRequest,
   async (req: Request, res: Response) => {
@@ -76,6 +64,18 @@ router.put(
       res.status(200).json("marked as complete");
     } else {
       res.status(500).json("error occured while marking it as complete.");
+    }
+  }
+);
+
+router.put(
+  "/api/item/:id",
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const result = await sfs.updateRecord(req.body.data, Number(req.params.id), req.currentUser?.uuid!);
+    if (result) res.status(200).json("updated");
+    else {
+      res.status(500).json("error occured in updating");
     }
   }
 );

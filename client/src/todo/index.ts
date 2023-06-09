@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAuthToken } from "../common/readFiLe";
+import { getAuthToken } from "../common/readFile";
 import { API_URL } from "../constants";
 
 enum USER_ACTIONS {
@@ -9,6 +9,13 @@ enum USER_ACTIONS {
   GET_ALL = "--g",
   MARK_COMPLETE = "--complete",
 }
+
+const headers = async () => {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${await getAuthToken()}`,
+  };
+};
 
 async function manageTodoList() {
   let userAction = process.argv[2];
@@ -23,10 +30,7 @@ async function manageTodoList() {
             data: userContent,
           },
           {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${await getAuthToken()}`,
-            },
+            headers: await headers(),
           }
         )
         .then((resp: any) => {
@@ -44,10 +48,7 @@ async function manageTodoList() {
             data: userContent,
           },
           {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${await getAuthToken()}`,
-            },
+            headers: await headers(),
           }
         )
         .then((res) => {
@@ -60,9 +61,7 @@ async function manageTodoList() {
     case USER_ACTIONS.GET_ALL: {
       axios
         .get(`${API_URL}/api/items`, {
-          headers: {
-            Authorization: `Bearer ${await getAuthToken()}`,
-          },
+          headers: await headers(),
         })
         .then((res) => {
           console.log("List of items \n", res.data);
@@ -75,7 +74,7 @@ async function manageTodoList() {
       let idToBeUpdated = process.argv[3];
       axios
         .delete(`${API_URL}/api/item/${idToBeUpdated}`, {
-          headers: { Authorization: `Bearer ${await getAuthToken()}` },
+          headers: await headers(),
         })
         .then((res) => {
           console.log(res.data);
@@ -87,11 +86,11 @@ async function manageTodoList() {
     case USER_ACTIONS.MARK_COMPLETE: {
       let idToBeUpdated = process.argv[3];
       axios
-        .put(`${API_URL}/api/item/complete/${idToBeUpdated}`, {
-          headers: {
-            Authorization: `Bearer ${await getAuthToken()}`,
-          },
-        })
+        .put(
+          `${API_URL}/api/item/complete/${idToBeUpdated}`,
+          {},
+          { headers: await headers() }
+        )
         .then((res) => {
           console.log(res.data);
         })

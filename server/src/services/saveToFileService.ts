@@ -78,11 +78,19 @@ export class SaveToFileService implements SaveOperations {
     }
   }
 
-  async setDataToRedis(data: string, uuid: string) {
+  async setDataToRedis(
+    data: string,
+    uuid: string,
+    operation: "save" | "update"
+  ) {
     try {
       const rds = await getRdsClient();
       // const savedData = await this.rdsClient.set("records", data);
-      const savedData = await rds?.set(`${uuid}#records`, data);
+      // const savedData =  await rds?.set(`${uuid}#records`, data);
+      const savedData =
+        operation === "save"
+          ? await rds?.set(`${uuid}#records`, data) //NX -- Only set the key if it does not already exist.
+          : await rds?.set(`${uuid}#records`, data, { XX: true }); //XX -- Only set the key if it already exists.
       await rds?.quit();
       console.log({ savedData });
     } catch (err) {
@@ -107,7 +115,7 @@ export class SaveToFileService implements SaveOperations {
           //used write file to make push new item to make it json file, hence not used append
           promises.writeFile(this.file, stringifiedData);
           console.log("item saved successfully");
-          this.setDataToRedis(stringifiedData, uuid);
+          await this.setDataToRedis(stringifiedData, uuid, "save");
           return newItem;
         } catch (err) {
           console.log("Error while saving file");
@@ -135,7 +143,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("Record updated successfully");
-        this.setDataToRedis(stringifiedData, uuid);
+        await this.setDataToRedis(stringifiedData, uuid, "update");
         return content[foundIndex];
       } catch (err) {
         console.error(err, "Cannot update item");
@@ -156,7 +164,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("Record deleted successfully");
-        await this.setDataToRedis(stringifiedData, uuid);
+        await this.setDataToRedis(stringifiedData, uuid, "update");
         return recordId;
       } catch (error) {
         console.error(error, "Cannot delete item");
@@ -174,7 +182,6 @@ export class SaveToFileService implements SaveOperations {
     let content: ToDoItem[] = await this.getData(uuid);
     if (content) {
       let foundIndex = content.findIndex(({ id }) => id === recordId);
-
       // if (foundIndex === -1) throw new CustomError(`${updateId} not found.`); // guard
       if (foundIndex === -1) throw new NotFoundError(); // guard
       content[foundIndex].status = "done";
@@ -182,7 +189,7 @@ export class SaveToFileService implements SaveOperations {
       try {
         promises.writeFile(this.file, stringifiedData);
         console.log("File updated successfully as", content[foundIndex]);
-        await this.setDataToRedis(stringifiedData, uuid);
+        await this.setDataToRedis(stringifiedData, uuid, "update");
         return content[foundIndex];
       } catch (error) {
         console.error(error, "Cannot update item");

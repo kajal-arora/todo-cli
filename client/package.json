@@ -1,9 +1,10 @@
 {
   "devDependencies": {
-    "@types/node": "^20.2.0"
+    "@types/node": "^20.2.5"
   },
   "dependencies": {
     "@types/axios": "^0.14.0",
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "typescript": "^5.1.3"
   }
 }

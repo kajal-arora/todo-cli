@@ -1,3 +1,4 @@
+// import { NotAuthorizedError } from "@karancultor/common";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_KEY } from "./constants";
@@ -24,9 +25,11 @@ export const validateRequest = (
 ) => {
   try {
     const authToken = req.headers?.authorization;
-    console.log("Entered in validate", authToken);
     if (!authToken) {
-      return next();
+      // throw new NotAuthorizedError();
+      return res.status(401).send({
+        error: "Unauthenticated user",
+      });
     }
     const token = authToken.split(" ")[1];
     const payload = jwt.verify(token, JWT_KEY!) as UserPayload;
