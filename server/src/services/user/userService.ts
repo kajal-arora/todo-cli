@@ -14,10 +14,10 @@ export class UserService {
 
   private async createNewUser(emailId: string, pwd: string): Promise<string> {
     const encryptedPwd = await Password.toHash(pwd);
-    console.log({ emailId });
     const rds = await getRdsClient();
     const uuid = await Password.getUUID();
-    rds?.set(emailId, JSON.stringify({ pwd: encryptedPwd, uuid }));
+    // rds?.set(emailId, JSON.stringify({ pwd: encryptedPwd, uuid }));
+    rds?.hSet(emailId, { pwd: encryptedPwd, uuid });
     rds?.quit();
     return uuid;
   }
@@ -25,7 +25,9 @@ export class UserService {
   private async checkIfEmailExists(emailId: string) {
     const rds = await getRdsClient();
     const userKey = getUserDetailsKey(emailId); //get details linked with email id
-    const emailIdDetails = await rds?.get(userKey);
+    // const emailIdDetails = await rds?.get(userKey);
+    const emailIdDetails = await rds?.hGetAll(userKey);
+    console.log(emailIdDetails);
     rds?.quit();
     return { emailIdDetails, userKey };
   }
@@ -35,9 +37,11 @@ export class UserService {
       const { emailIdDetails, userKey } = await this.checkIfEmailExists(
         emailId
       );
-      if (emailIdDetails) {
+      // if(emailIdDetails)
+      if (emailIdDetails && Object.keys(emailIdDetails).length != 0) {
         throw new Error(`${userKey} Email is already registered.`);
       } else {
+        console.log("entered on signup else")
         const uuid = await this.createNewUser(userKey, pwd);
         const userJWT = jwt.sign({ emailId, uuid }, JWT_KEY!);
         return userJWT;
@@ -51,12 +55,15 @@ export class UserService {
 
   async signInUser(emailId: string, pwd: string) {
     try {
-      const { emailIdDetails, userKey } = await this.checkIfEmailExists(emailId);
+      const { emailIdDetails, userKey } = await this.checkIfEmailExists(
+        emailId
+      );
       if (!emailIdDetails) {
         throw new Error(`${userKey} Email Id is not registered.`);
       }
       //verify the password
-      const parsedUserDetails = JSON.parse(emailIdDetails);
+      // const parsedUserDetails = JSON.parse(emailIdDetails);
+      const parsedUserDetails = emailIdDetails;
       const isPwdMatched = await Password.comparePassword(
         parsedUserDetails.pwd,
         pwd

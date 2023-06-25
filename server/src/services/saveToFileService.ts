@@ -87,10 +87,12 @@ export class SaveToFileService implements SaveOperations {
       const rds = await getRdsClient();
       // const savedData = await this.rdsClient.set("records", data);
       // const savedData =  await rds?.set(`${uuid}#records`, data);
+
       const savedData =
         operation === "save"
-          ? await rds?.set(`${uuid}#records`, data) //NX -- Only set the key if it does not already exist.
+          ? await rds?.set(`${uuid}#records`, data, {EX: 120}) //NX -- Only set the key if it does not already exist.
           : await rds?.set(`${uuid}#records`, data, { XX: true }); //XX -- Only set the key if it already exists.
+        
       await rds?.quit();
       console.log({ savedData });
     } catch (err) {

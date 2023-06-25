@@ -16,12 +16,19 @@
 // export const rds = new Redis();
 
 import { RedisClientType, createClient } from "redis";
-
+import { REDIS_HOST, REDIS_PORT } from "../common/constants";
+//not getting use currently
 class Redis {
   client: RedisClientType;
 
   constructor() {
-    this.client = createClient(); // Initialize the client in the constructor
+    this.client = createClient({
+      socket: {
+        host: REDIS_HOST,
+        port: parseInt(REDIS_PORT!)
+      }
+    }); // Initialize the client in the constructor
+    this.client.on("error", (err) => console.error("Error on creating redis client", err));
   }
 
   async connect() {

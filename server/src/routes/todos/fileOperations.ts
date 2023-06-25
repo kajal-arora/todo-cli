@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { RedisClientType, createClient } from "redis";
-import { REDIS_URI } from "../../common/constants";
+// import { REDIS_URI } from "../../common/constants";
 import { validateRequest } from "../../common/validateRequest";
 import { getRdsClient } from "../../db/rdsClient";
 import { SaveOperations } from "../../services/fileInterface";
